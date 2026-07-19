@@ -7,6 +7,32 @@ from sqlite3 import Connection
 from utils.logger import logger
 
 
+def _migrate_posts_table(connection: Connection) -> None:
+    """
+    Adds any columns that don't exist yet on an already-created
+    posts table (safe to run every startup; existing data is kept).
+    """
+
+    cursor = connection.cursor()
+
+    cursor.execute("PRAGMA table_info(posts)")
+    existing_columns = {row[1] for row in cursor.fetchall()}
+
+    new_columns = {
+        "lead_score": "INTEGER DEFAULT 0",
+        "classified_by": "TEXT",
+    }
+
+    for column, definition in new_columns.items():
+        if column not in existing_columns:
+            cursor.execute(
+                f"ALTER TABLE posts ADD COLUMN {column} {definition}"
+            )
+            logger.info("Added missing column '%s' to posts table.", column)
+
+    connection.commit()
+
+
 def initialize_database(connection: Connection) -> None:
     """
     Creates all database tables if they do not exist.
@@ -29,10 +55,14 @@ def initialize_database(connection: Connection) -> None:
         subcategory TEXT,
         confidence REAL,
         summary TEXT,
+        lead_score INTEGER DEFAULT 0,
+        classified_by TEXT,
         processed INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
+
+    _migrate_posts_table(connection)
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS help_posts(

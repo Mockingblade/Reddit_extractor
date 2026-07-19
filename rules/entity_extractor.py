@@ -147,31 +147,6 @@ def extract_timeline(
 
 
 # ==========================================================
-# MASTER EXTRACTION (Part 1)
-# ==========================================================
-def extract_basic_entities(
-    title: str,
-    body: str,
-) -> ExtractedEntities:
-
-    document = build_document(title, body)
-
-    entities = ExtractedEntities()
-
-    extract_scores(document, entities)
-
-    extract_timeline(document, entities)
-
-    extract_resources(document, entities)
-
-    extract_schools(document, entities)
-
-    extract_work_profile(document, entities)
-
-    extract_sections(document, entities)
-
-    return entities
-# ==========================================================
 # RESOURCE DICTIONARY
 # ==========================================================
 

@@ -91,6 +91,8 @@ class DatabaseManager:
         subcategory: str,
         confidence: float,
         summary: str,
+        lead_score: int = 0,
+        classified_by: str = "LLM",
         ):
         cursor = self.connection.cursor()
         cursor.execute(
@@ -101,6 +103,8 @@ class DatabaseManager:
                 subcategory = ?,
                 confidence = ?,
                 summary = ?,
+                lead_score = ?,
+                classified_by = ?,
                 processed = 1
             WHERE reddit_id = ?
             """,
@@ -109,8 +113,31 @@ class DatabaseManager:
                 subcategory,
                 confidence,
                 summary,
+                lead_score,
+                classified_by,
                 reddit_id,
             ),
         )
 
         self.connection.commit()
+
+    def get_top_leads(self, limit: int = 20):
+        """
+        Returns processed posts ordered by lead_score, highest first.
+        Useful for pulling out the people most worth reaching out to.
+        """
+
+        cursor = self.connection.cursor()
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM posts
+            WHERE processed = 1
+            ORDER BY lead_score DESC, confidence DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+
+        return cursor.fetchall()

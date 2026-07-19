@@ -42,13 +42,15 @@ class ClassificationResult:
 
 HELP_REQUEST = "HELP_REQUEST"
 
-EXPERIENCE = "EXPERIENCE"
+# Aligned with the categories used in prompts/classification_prompt.txt
+# so rule-classified and LLM-classified posts share one vocabulary.
+EXPERIENCE = "SUCCESS_STORY"
 
-MBA = "MBA"
+MBA = "PROFILE_REVIEW"
 
-DISCUSSION = "DISCUSSION"
+DISCUSSION = "GENERAL_DISCUSSION"
 
-UNKNOWN = "UNKNOWN"
+UNKNOWN = "OTHER"
 
 
 # ==========================================================
@@ -361,6 +363,50 @@ def classify_discussion(
 
 
 # ==========================================================
+# SUMMARY BUILDER (for rule-classified posts, no LLM call)
+# ==========================================================
+
+def build_summary(entities: ExtractedEntities) -> str:
+    """
+    Build a short human-readable summary from extracted entities,
+    used when a post is classified without calling the LLM.
+    """
+
+    parts = []
+
+    if entities.working_professional:
+        parts.append("Working professional")
+
+    if entities.current_score is not None:
+        parts.append(f"Current score {entities.current_score}")
+
+    if entities.target_score is not None:
+        parts.append(f"Target {entities.target_score}")
+
+    if entities.sections:
+        section_str = ", ".join(
+            f"{k}{v}" for k, v in entities.sections.items()
+        )
+        parts.append(f"Sections {section_str}")
+
+    if entities.mock_number is not None:
+        parts.append(f"Mock #{entities.mock_number}")
+
+    if entities.timeline_value is not None and entities.timeline_unit:
+        parts.append(
+            f"{entities.timeline_value} {entities.timeline_unit} left"
+        )
+
+    if entities.resources:
+        parts.append("Resources: " + ", ".join(entities.resources))
+
+    if entities.schools:
+        parts.append("Schools: " + ", ".join(entities.schools))
+
+    return ". ".join(parts)
+
+
+# ==========================================================
 # MAIN CLASSIFIER
 # ==========================================================
 
@@ -451,7 +497,7 @@ def classify(
 
     return ClassificationResult(
         category=UNKNOWN,
-        subcategory="UNKNOWN",
+        subcategory="OTHER",
         confidence=0.0,
         lead_score=calculate_lead_score(entities),
         needs_llm=True,
