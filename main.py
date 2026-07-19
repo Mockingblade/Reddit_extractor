@@ -2,6 +2,7 @@ from database.connection import DatabaseConnection
 from database.manager import DatabaseManager
 from database.schema import initialize_database
 
+from reports.exporter import export_to_csv
 from services.pipeline import RedditPipeline
 
 RSS_FEEDS = {
@@ -22,6 +23,8 @@ def main():
     pipeline.ingest_posts(RSS_FEEDS)
 
     pipeline.classify_posts()
+
+    export_to_csv(manager)
 
     database.close()
 
